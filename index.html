@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>北京时间</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: "SF Mono", "Consolas", monospace;
+      gap: 16px;
+    }
+    #time {
+      font-size: clamp(2.5rem, 10vw, 6rem);
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+    }
+    #date { font-size: 1.1rem; color: #94a3b8; }
+    #status { font-size: 0.8rem; color: #64748b; min-height: 1em; }
+  </style>
+</head>
+<body>
+  <div id="date">加载中…</div>
+  <div id="time">--:--:--</div>
+  <div id="status">正在从 Cloudflare 边缘获取时间…</div>
+
+  <script>
+    (function () {
+      const timeEl = document.getElementById("time");
+      const dateEl = document.getElementById("date");
+      const statusEl = document.getElementById("status");
+
+      // 服务器时间基准（毫秒）和对应的本地 performance.now()
+      let serverTimeBase = null;
+      let localTimeBase = null;
+      let drift = 0; // serverTime - clientTime 的偏移
+
+      const dateFmt = new Intl.DateTimeFormat("zh-CN", {
+        timeZone: "Asia/Shanghai",
+        year: "numeric", month: "2-digit", day: "2-digit",
+        weekday: "long",
+      });
+      const timeFmt = new Intl.DateTimeFormat("zh-CN", {
+        timeZone: "Asia/Shanghai",
+        hour: "2-digit", minute: "2-digit", second: "2-digit",
+        hour12: false,
+      });
+
+      function pad(n) { return String(n).padStart(2, "0"); }
+
+      function render(nowMs) {
+        // 用 Intl 按上海时区格式化，避免手动算时区
+        const d = new Date(nowMs);
+        dateEl.textContent = dateFmt.format(d);
+        timeEl.textContent = timeFmt.format(d);
+      }
+
+      function currentEstimatedServerTime() {
+        if (serverTimeBase === null) return Date.now();
+        const elapsed = performance.now() - localTimeBase;
+        return serverTimeBase + elapsed;
+      }
+
+      function tick() {
+        render(currentEstimatedServerTime());
+        requestAnimationFrame(tick);
+      }
+
+      async function syncTime() {
+        try {
+          const t0 = performance.now();
+          const res = await fetch("/api/time", { cache: "no-store" });
+          const t1 = performance.now();
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const data = await res.json();
+
+          // 简单往返延迟补偿：假设请求和响应耗时相近
+          const rtt = t1 - t0;
+          serverTimeBase = data.serverTime + rtt / 2;
+          localTimeBase = performance.now();
+          drift = serverTimeBase - Date.now();
+
+          statusEl.textContent =
+            `时间源：Cloudflare 边缘 · 延迟约 ${Math.round(rtt)} ms · 与本地设备偏差 ${Math.round(drift)} ms`;
+        } catch (e) {
+          statusEl.textContent = "获取服务器时间失败，暂时使用本地设备时间：" + e.message;
+          serverTimeBase = null;
+        }
+      }
+
+      // 启动
+      syncTime().then(() => {
+        tick();
+      });
+
+      // 每 10 分钟重新校准一次
+      setInterval(syncTime, 10 * 60 * 1000);
+
+      // 页面重新可见时校准一次
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) syncTime();
+      });
+    })();
+  </script>
+</body>
+</html>
