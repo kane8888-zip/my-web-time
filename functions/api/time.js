@@ -1,7 +1,3 @@
-// Cloudflare Pages Function
-// 路由：/api/time
-// 返回 Cloudflare 边缘节点的当前时间（毫秒时间戳）
-
 export async function onRequestGet() {
   const now = Date.now();
 
