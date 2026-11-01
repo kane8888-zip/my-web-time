@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>北京时间</title>
+  <title>Clock</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -15,96 +15,373 @@
       background: #0f172a;
       color: #e2e8f0;
       font-family: "SF Mono", "Consolas", monospace;
-      gap: 16px;
+      position: relative;
     }
-    #time {
-      font-size: clamp(2.5rem, 10vw, 6rem);
+    #settingsBtn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 100;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #94a3b8;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    #settingsBtn:hover { background: #334155; color: #e2e8f0; }
+
+    #settingsPanel {
+      position: fixed;
+      top: 70px;
+      right: 16px;
+      z-index: 99;
+      width: 320px;
+      max-height: calc(100vh - 90px);
+      overflow-y: auto;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 20px;
+      display: none;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    #settingsPanel.open { display: block; }
+    #settingsPanel h3 {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 10px;
+      font-weight: normal;
+    }
+    #settingsPanel .group { margin-bottom: 18px; }
+    #settingsPanel select {
+      width: 100%;
+      padding: 10px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+    #settingsPanel select:focus { border-color: #3b82f6; }
+
+    #mainClock {
+      text-align: center;
+      padding: 0 24px;
+    }
+    #mainLabel {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    #mainTime {
+      font-size: clamp(3rem, 12vw, 7rem);
       letter-spacing: 0.05em;
       font-variant-numeric: tabular-nums;
+      line-height: 1.1;
     }
-    #date { font-size: 1.1rem; color: #94a3b8; }
-    #status { font-size: 0.8rem; color: #64748b; min-height: 1em; }
+    #mainDate {
+      font-size: 1.1rem;
+      color: #94a3b8;
+      margin-top: 12px;
+    }
+    #status {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+      color: #475569;
+      min-height: 1em;
+      text-align: center;
+      padding: 0 16px;
+    }
   </style>
 </head>
 <body>
-  <div id="date">加载中…</div>
-  <div id="time">--:--:--</div>
-  <div id="status">正在从 Cloudflare 边缘获取时间…</div>
+
+  <button id="settingsBtn" title="Settings">⚙</button>
+  <div id="settingsPanel">
+    <div class="group">
+      <h3 id="lblTz">时区</h3>
+      <select id="timezoneSelect"></select>
+    </div>
+    <div class="group">
+      <h3 id="lblLang">语言</h3>
+      <select id="langSelect">
+        <option value="zh">中文</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="mainClock">
+    <div id="mainLabel"></div>
+    <div id="mainTime">--:--:--</div>
+    <div id="mainDate">…</div>
+  </div>
+  <div id="status"></div>
 
   <script>
     (function () {
-      const timeEl = document.getElementById("time");
-      const dateEl = document.getElementById("date");
-      const statusEl = document.getElementById("status");
+      // ---------- 时区列表（Cloudflare 主要节点对应城市）----------
+      const REGIONS = [
+        { colo: 'HKG', cityZh: '香港', cityEn: 'Hong Kong', tz: 'Asia/Hong_Kong' },
+        { colo: 'NRT', cityZh: '东京', cityEn: 'Tokyo', tz: 'Asia/Tokyo' },
+        { colo: 'KIX', cityZh: '大阪', cityEn: 'Osaka', tz: 'Asia/Tokyo' },
+        { colo: 'ICN', cityZh: '首尔', cityEn: 'Seoul', tz: 'Asia/Seoul' },
+        { colo: 'SIN', cityZh: '新加坡', cityEn: 'Singapore', tz: 'Asia/Singapore' },
+        { colo: 'TPE', cityZh: '台北', cityEn: 'Taipei', tz: 'Asia/Taipei' },
+        { colo: 'BKK', cityZh: '曼谷', cityEn: 'Bangkok', tz: 'Asia/Bangkok' },
+        { colo: 'KUL', cityZh: '吉隆坡', cityEn: 'Kuala Lumpur', tz: 'Asia/Kuala_Lumpur' },
+        { colo: 'CGK', cityZh: '雅加达', cityEn: 'Jakarta', tz: 'Asia/Jakarta' },
+        { colo: 'MNL', cityZh: '马尼拉', cityEn: 'Manila', tz: 'Asia/Manila' },
+        { colo: 'SYD', cityZh: '悉尼', cityEn: 'Sydney', tz: 'Australia/Sydney' },
+        { colo: 'MEL', cityZh: '墨尔本', cityEn: 'Melbourne', tz: 'Australia/Melbourne' },
+        { colo: 'AKL', cityZh: '奥克兰', cityEn: 'Auckland', tz: 'Pacific/Auckland' },
+        { colo: 'LHR', cityZh: '伦敦', cityEn: 'London', tz: 'Europe/London' },
+        { colo: 'CDG', cityZh: '巴黎', cityEn: 'Paris', tz: 'Europe/Paris' },
+        { colo: 'FRA', cityZh: '法兰克福', cityEn: 'Frankfurt', tz: 'Europe/Berlin' },
+        { colo: 'AMS', cityZh: '阿姆斯特丹', cityEn: 'Amsterdam', tz: 'Europe/Amsterdam' },
+        { colo: 'MAD', cityZh: '马德里', cityEn: 'Madrid', tz: 'Europe/Madrid' },
+        { colo: 'FCO', cityZh: '罗马', cityEn: 'Rome', tz: 'Europe/Rome' },
+        { colo: 'WAW', cityZh: '华沙', cityEn: 'Warsaw', tz: 'Europe/Warsaw' },
+        { colo: 'SVO', cityZh: '莫斯科', cityEn: 'Moscow', tz: 'Europe/Moscow' },
+        { colo: 'JFK', cityZh: '纽约', cityEn: 'New York', tz: 'America/New_York' },
+        { colo: 'LAX', cityZh: '洛杉矶', cityEn: 'Los Angeles', tz: 'America/Los_Angeles' },
+        { colo: 'SFO', cityZh: '旧金山', cityEn: 'San Francisco', tz: 'America/Los_Angeles' },
+        { colo: 'SEA', cityZh: '西雅图', cityEn: 'Seattle', tz: 'America/Los_Angeles' },
+        { colo: 'ORD', cityZh: '芝加哥', cityEn: 'Chicago', tz: 'America/Chicago' },
+        { colo: 'DFW', cityZh: '达拉斯', cityEn: 'Dallas', tz: 'America/Chicago' },
+        { colo: 'YYZ', cityZh: '多伦多', cityEn: 'Toronto', tz: 'America/Toronto' },
+        { colo: 'GRU', cityZh: '圣保罗', cityEn: 'São Paulo', tz: 'America/Sao_Paulo' },
+        { colo: 'EZE', cityZh: '布宜诺斯艾利斯', cityEn: 'Buenos Aires', tz: 'America/Argentina/Buenos_Aires' },
+        { colo: 'MEX', cityZh: '墨西哥城', cityEn: 'Mexico City', tz: 'America/Mexico_City' },
+        { colo: 'BOM', cityZh: '孟买', cityEn: 'Mumbai', tz: 'Asia/Kolkata' },
+        { colo: 'DEL', cityZh: '新德里', cityEn: 'New Delhi', tz: 'Asia/Kolkata' },
+        { colo: 'DXB', cityZh: '迪拜', cityEn: 'Dubai', tz: 'Asia/Dubai' },
+        { colo: 'JNB', cityZh: '约翰内斯堡', cityEn: 'Johannesburg', tz: 'Africa/Johannesburg' },
+        { colo: 'CAI', cityZh: '开罗', cityEn: 'Cairo', tz: 'Africa/Cairo' },
+        { colo: 'LOS', cityZh: '拉各斯', cityEn: 'Lagos', tz: 'Africa/Lagos' },
+      ];
 
-      // 服务器时间基准（毫秒）和对应的本地 performance.now()
+      const BEIJING = { colo: 'PEK', cityZh: '北京', cityEn: 'Beijing', tz: 'Asia/Shanghai' };
+
+      // ---------- 文案 ----------
+      const I18N = {
+        zh: {
+          label: '北京时间',
+          tzLabel: '时区',
+          langLabel: '语言',
+          beijing: '北京时间',
+          statusOk: (rtt, drift) => `时间源：Cloudflare 边缘 · 延迟约 ${rtt} ms · 与本地设备偏差 ${drift} ms`,
+          statusErr: (msg) => '获取服务器时间失败，暂时使用本地设备时间：' + msg,
+        },
+        en: {
+          label: 'Beijing Time',
+          tzLabel: 'Time Zone',
+          langLabel: 'Language',
+          beijing: 'Beijing Time',
+          statusOk: (rtt, drift) => `Source: Cloudflare edge · RTT ~${rtt} ms · offset vs local ${drift} ms`,
+          statusErr: (msg) => 'Failed to fetch server time, using local device time: ' + msg,
+        },
+      };
+
+      // ---------- 状态 ----------
       let serverTimeBase = null;
       let localTimeBase = null;
-      let drift = 0; // serverTime - clientTime 的偏移
+      let drift = 0;
+      let mainTz = 'Asia/Shanghai';
+      let lang = 'zh';
+      let lastStatus = null;
 
-      const dateFmt = new Intl.DateTimeFormat("zh-CN", {
-        timeZone: "Asia/Shanghai",
-        year: "numeric", month: "2-digit", day: "2-digit",
-        weekday: "long",
-      });
-      const timeFmt = new Intl.DateTimeFormat("zh-CN", {
-        timeZone: "Asia/Shanghai",
-        hour: "2-digit", minute: "2-digit", second: "2-digit",
-        hour12: false,
-      });
+      const mainTimeEl = document.getElementById('mainTime');
+      const mainDateEl = document.getElementById('mainDate');
+      const mainLabelEl = document.getElementById('mainLabel');
+      const statusEl = document.getElementById('status');
+      const tzSelect = document.getElementById('timezoneSelect');
+      const langSelect = document.getElementById('langSelect');
+      const lblTz = document.getElementById('lblTz');
+      const lblLang = document.getElementById('lblLang');
 
-      function pad(n) { return String(n).padStart(2, "0"); }
+      // ---------- 时区选项：北京 + 去重地区 ----------
+      const TZ_OPTIONS = (() => {
+        const list = [{ ...BEIJING, isBeijing: true }];
+        const seen = new Set(['Asia/Shanghai']);
+        REGIONS.forEach(r => {
+          if (!seen.has(r.tz)) {
+            seen.add(r.tz);
+            list.push(r);
+          }
+        });
+        return list;
+      })();
 
-      function render(nowMs) {
-        // 用 Intl 按上海时区格式化，避免手动算时区
-        const d = new Date(nowMs);
-        dateEl.textContent = dateFmt.format(d);
-        timeEl.textContent = timeFmt.format(d);
+      // ---------- 计算某时区当前的 UTC 偏移，返回 "UTC+8" / "UTC-5" / "UTC+5:30" ----------
+      function getUtcOffset(tz, date = new Date()) {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: tz,
+          timeZoneName: 'shortOffset',
+        }).formatToParts(date);
+
+        const tzPart = parts.find(p => p.type === 'timeZoneName');
+        if (!tzPart) return 'UTC';
+
+        let s = tzPart.value.replace('GMT', 'UTC');
+        // "UTC+08:00" -> "UTC+8"，"UTC+00:00" -> "UTC"
+        s = s.replace(/UTC([+-])0?(\d+)(?::00)?$/, (m, sign, h) => {
+          return h === '0' ? 'UTC' : `UTC${sign}${h}`;
+        });
+        // 处理半小时偏移 "UTC+05:30" -> "UTC+5:30"
+        s = s.replace(/UTC([+-])0?(\d+):(\d{2})$/, (m, sign, h, min) => {
+          return `UTC${sign}${h}:${min}`;
+        });
+        return s;
       }
 
-      function currentEstimatedServerTime() {
+      // ---------- 格式化 ----------
+      function fmtTime(ms, tz, locale) {
+        return new Intl.DateTimeFormat(locale, {
+          timeZone: tz,
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hour12: false,
+        }).format(new Date(ms));
+      }
+
+      function fmtDate(ms, tz, locale) {
+        return new Intl.DateTimeFormat(locale, {
+          timeZone: tz,
+          year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
+        }).format(new Date(ms));
+      }
+
+      function currentServerTime() {
         if (serverTimeBase === null) return Date.now();
         const elapsed = performance.now() - localTimeBase;
         return serverTimeBase + elapsed;
       }
 
-      function tick() {
-        render(currentEstimatedServerTime());
-        requestAnimationFrame(tick);
+      // ---------- 渲染主时钟 ----------
+      function render() {
+        const now = currentServerTime();
+        const locale = lang === 'zh' ? 'zh-CN' : 'en-US';
+        mainTimeEl.textContent = fmtTime(now, mainTz, locale);
+        mainDateEl.textContent = fmtDate(now, mainTz, locale);
+        requestAnimationFrame(render);
       }
 
+      // ---------- 时区下拉 ----------
+      function rebuildTzSelect() {
+        tzSelect.innerHTML = '';
+        TZ_OPTIONS.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.tz;
+          const city = lang === 'zh' ? r.cityZh : r.cityEn;
+          const offset = getUtcOffset(r.tz);
+          opt.textContent = r.isBeijing
+            ? `${I18N[lang].beijing} · ${offset}`
+            : `${city} (${r.colo}) · ${offset}`;
+          if (r.tz === mainTz) opt.selected = true;
+          tzSelect.appendChild(opt);
+        });
+      }
+
+      // ---------- 主标签文字 ----------
+      function updateMainLabel() {
+        const found = TZ_OPTIONS.find(r => r.tz === mainTz);
+        if (mainTz === 'Asia/Shanghai') {
+          mainLabelEl.textContent = I18N[lang].label;
+        } else if (found) {
+          mainLabelEl.textContent = lang === 'zh' ? found.cityZh : found.cityEn;
+        } else {
+          mainLabelEl.textContent = mainTz;
+        }
+      }
+
+      // ---------- 应用语言 ----------
+      function applyLang() {
+        document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+        document.title = lang === 'zh' ? '全球时钟' : 'World Clock';
+
+        lblTz.textContent = I18N[lang].tzLabel;
+        lblLang.textContent = I18N[lang].langLabel;
+
+        rebuildTzSelect();
+        updateMainLabel();
+
+        if (lastStatus && lastStatus.type === 'ok') {
+          statusEl.textContent = I18N[lang].statusOk(lastStatus.rtt, lastStatus.drift);
+        } else if (lastStatus && lastStatus.type === 'err') {
+          statusEl.textContent = I18N[lang].statusErr(lastStatus.msg);
+        }
+      }
+
+      // ---------- 同步时间 ----------
       async function syncTime() {
         try {
           const t0 = performance.now();
-          const res = await fetch("/api/time", { cache: "no-store" });
+          const res = await fetch('/api/time', { cache: 'no-store' });
           const t1 = performance.now();
-          if (!res.ok) throw new Error("HTTP " + res.status);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
           const data = await res.json();
 
-          // 简单往返延迟补偿：假设请求和响应耗时相近
           const rtt = t1 - t0;
           serverTimeBase = data.serverTime + rtt / 2;
           localTimeBase = performance.now();
           drift = serverTimeBase - Date.now();
 
-          statusEl.textContent =
-            `时间源：Cloudflare 边缘 · 延迟约 ${Math.round(rtt)} ms · 与本地设备偏差 ${Math.round(drift)} ms`;
+          lastStatus = { type: 'ok', rtt: Math.round(rtt), drift: Math.round(drift) };
+          statusEl.textContent = I18N[lang].statusOk(lastStatus.rtt, lastStatus.drift);
         } catch (e) {
-          statusEl.textContent = "获取服务器时间失败，暂时使用本地设备时间：" + e.message;
           serverTimeBase = null;
+          lastStatus = { type: 'err', msg: e.message };
+          statusEl.textContent = I18N[lang].statusErr(e.message);
         }
       }
 
-      // 启动
-      syncTime().then(() => {
-        tick();
+      // ---------- 设置面板开关 ----------
+      const settingsBtn = document.getElementById('settingsBtn');
+      const settingsPanel = document.getElementById('settingsPanel');
+
+      settingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        settingsPanel.classList.toggle('open');
       });
 
-      // 每 10 分钟重新校准一次
+      document.addEventListener('click', (e) => {
+        if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
+          settingsPanel.classList.remove('open');
+        }
+      });
+
+      // ---------- 事件绑定 ----------
+      tzSelect.addEventListener('change', () => {
+        mainTz = tzSelect.value;
+        updateMainLabel();
+      });
+
+      langSelect.addEventListener('change', () => {
+        lang = langSelect.value;
+        applyLang();
+      });
+
+      // ---------- 启动 ----------
+      applyLang();
+      syncTime().then(() => render());
+
       setInterval(syncTime, 10 * 60 * 1000);
 
-      // 页面重新可见时校准一次
-      document.addEventListener("visibilitychange", () => {
+      document.addEventListener('visibilitychange', () => {
         if (!document.hidden) syncTime();
       });
     })();
