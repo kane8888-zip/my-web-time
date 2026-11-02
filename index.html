@@ -6,17 +6,95 @@
   <title>Clock</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ---------- 主题变量 ---------- */
+    :root {
+      --bg: #f8fafc;
+      --panel-bg: #ffffff;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #64748b;
+      --text-faint: #94a3b8;
+      --accent: #2563eb;
+      --btn-bg: #ffffff;
+      --btn-hover: #e2e8f0;
+      --card-bg: #f1f5f9;
+    }
+
+    body.theme-gray   { --bg:#1c1c1e; --panel-bg:#2c2c2e; --border:#3a3a3c; --text:#d4d4d8; --text-muted:#a1a1aa; --text-dim:#8e8e93; --text-faint:#636366; --btn-bg:#2c2c2e; --btn-hover:#3a3a3c; --card-bg:#1c1c1e; --accent:#0a84ff; }
+
+    body.theme-white  { --bg:#f8fafc; --panel-bg:#fff;    --border:#cbd5e1; --text:#0f172a; --text-muted:#475569; --text-dim:#64748b; --text-faint:#94a3b8; --btn-bg:#fff;    --btn-hover:#e2e8f0; --card-bg:#f1f5f9; --accent:#2563eb; }
+
+    body.theme-red    { --bg:#fff1f2; --panel-bg:#ffe4e6; --border:#fda4af; --text:#7f1d1d; --text-muted:#b91c1c; --text-dim:#dc2626; --text-faint:#f87171; --btn-bg:#ffe4e6; --btn-hover:#fecdd3; --card-bg:#fff5f6; --accent:#e11d48; }
+
+    body.theme-yellow { --bg:#fefce8; --panel-bg:#fef9c3; --border:#fde047; --text:#713f12; --text-muted:#a16207; --text-dim:#ca8a04; --text-faint:#eab308; --btn-bg:#fef9c3; --btn-hover:#fef08a; --card-bg:#fffef5; --accent:#ca8a04; }
+
+    body.theme-green  { --bg:#f0fdf4; --panel-bg:#dcfce7; --border:#86efac; --text:#14532d; --text-muted:#15803d; --text-dim:#16a34a; --text-faint:#4ade80; --btn-bg:#dcfce7; --btn-hover:#bbf7d0; --card-bg:#f5fff8; --accent:#16a34a; }
+
+    body.theme-blue   { --bg:#f0f9ff; --panel-bg:#e0f2fe; --border:#7dd3fc; --text:#0c4a6e; --text-muted:#0369a1; --text-dim:#0284c7; --text-faint:#38bdf8; --btn-bg:#e0f2fe; --btn-hover:#bae6fd; --card-bg:#f5fbff; --accent:#0284c7; }
+
     body {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #0f172a;
-      color: #e2e8f0;
+      background: var(--bg);
+      color: var(--text);
       font-family: "SF Mono", "Consolas", monospace;
       position: relative;
+      transition: background 0.3s, color 0.3s;
+      padding-top: 80px;
     }
+
+    /* ---------- 左上角返回按钮 ---------- */
+    #backBtn {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 100;
+      height: 44px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--btn-bg);
+      color: var(--text-muted);
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s, color 0.2s;
+    }
+    #backBtn:hover { background: var(--btn-hover); color: var(--text); }
+    #backBtn .icon { font-size: 16px; line-height: 1; }
+
+    /* ---------- 顶部语言切换按钮 ---------- */
+    #topLangBtn {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--btn-bg);
+      color: var(--text-muted);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s, color 0.2s;
+    }
+    #topLangBtn:hover { background: var(--btn-hover); color: var(--text); }
+    #topLangBtn .arrow { font-size: 11px; opacity: 0.7; }
+
+    /* ---------- 右上角设置按钮 ---------- */
     #settingsBtn {
       position: fixed;
       top: 16px;
@@ -25,18 +103,65 @@
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      border: 1px solid #334155;
-      background: #1e293b;
-      color: #94a3b8;
+      border: 1px solid var(--border);
+      background: var(--btn-bg);
+      color: var(--text-muted);
       font-size: 22px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s;
+      transition: background 0.2s, color 0.2s;
     }
-    #settingsBtn:hover { background: #334155; color: #e2e8f0; }
+    #settingsBtn:hover { background: var(--btn-hover); color: var(--text); }
 
+    /* ---------- 右下角全屏按钮 ---------- */
+    #fullscreenBtn {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 100;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--btn-bg);
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s, opacity 0.2s;
+    }
+    #fullscreenBtn:hover { background: var(--btn-hover); color: var(--text); }
+
+    /* ---------- 关闭提示 ---------- */
+    #closeHint {
+      position: fixed;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
+      z-index: 200;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+      max-width: 90vw;
+      text-align: center;
+    }
+    #closeHint.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ---------- 设置面板 ---------- */
     #settingsPanel {
       position: fixed;
       top: 70px;
@@ -45,17 +170,18 @@
       width: 320px;
       max-height: calc(100vh - 90px);
       overflow-y: auto;
-      background: #1e293b;
-      border: 1px solid #334155;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 20px;
       display: none;
       box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      transition: background 0.3s, border-color 0.3s;
     }
     #settingsPanel.open { display: block; }
     #settingsPanel h3 {
       font-size: 13px;
-      color: #94a3b8;
+      color: var(--text-muted);
       margin-bottom: 10px;
       font-weight: normal;
     }
@@ -63,23 +189,50 @@
     #settingsPanel select {
       width: 100%;
       padding: 10px;
-      background: #0f172a;
-      border: 1px solid #334155;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
       border-radius: 8px;
-      color: #e2e8f0;
+      color: var(--text);
       font-size: 14px;
       font-family: inherit;
       outline: none;
     }
-    #settingsPanel select:focus { border-color: #3b82f6; }
+    #settingsPanel select:focus { border-color: var(--accent); }
 
-    #mainClock {
-      text-align: center;
-      padding: 0 24px;
+    /* ---------- 主题色选择 ---------- */
+    .theme-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
     }
+    .theme-swatch {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+      position: relative;
+    }
+    .theme-swatch:hover { transform: scale(1.1); }
+    .theme-swatch.active { border-color: var(--text); }
+    .theme-swatch.active::after {
+      content: "✓";
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #fff;
+      text-shadow: 0 0 4px rgba(0,0,0,0.8);
+    }
+
+    /* ---------- 主时钟 ---------- */
+    #mainClock { text-align: center; padding: 0 24px; }
     #mainLabel {
       font-size: 13px;
-      color: #64748b;
+      color: var(--text-dim);
       margin-bottom: 12px;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -92,7 +245,7 @@
     }
     #mainDate {
       font-size: 1.1rem;
-      color: #94a3b8;
+      color: var(--text-muted);
       margin-top: 12px;
     }
     #status {
@@ -101,14 +254,24 @@
       left: 50%;
       transform: translateX(-50%);
       font-size: 0.75rem;
-      color: #475569;
+      color: var(--text-faint);
       min-height: 1em;
       text-align: center;
       padding: 0 16px;
     }
   </style>
 </head>
-<body>
+<body class="theme-white">
+
+  <button id="backBtn" title="Close">
+    <span class="icon">←</span>
+    <span id="backText">返回</span>
+  </button>
+
+  <button id="topLangBtn" title="Language">
+    <span id="topLangText">中文</span>
+    <span class="arrow">▾</span>
+  </button>
 
   <button id="settingsBtn" title="Settings">⚙</button>
   <div id="settingsPanel">
@@ -123,7 +286,22 @@
         <option value="en">English</option>
       </select>
     </div>
+    <div class="group">
+      <h3 id="lblTheme">主题色</h3>
+      <div class="theme-row" id="themeRow">
+        <div class="theme-swatch" data-theme="gray"   style="background:#3a3a3c;" title="灰色"></div>
+        <div class="theme-swatch" data-theme="white"  style="background:#f8fafc;" title="白色"></div>
+        <div class="theme-swatch" data-theme="red"    style="background:#fb7185;" title="红色"></div>
+        <div class="theme-swatch" data-theme="yellow" style="background:#facc15;" title="黄色"></div>
+        <div class="theme-swatch" data-theme="green"  style="background:#4ade80;" title="绿色"></div>
+        <div class="theme-swatch" data-theme="blue"   style="background:#38bdf8;" title="浅蓝"></div>
+      </div>
+    </div>
   </div>
+
+  <button id="fullscreenBtn" title="Fullscreen">⛶</button>
+
+  <div id="closeHint"></div>
 
   <div id="mainClock">
     <div id="mainLabel"></div>
@@ -134,66 +312,73 @@
 
   <script>
     (function () {
-      // ---------- 时区列表（Cloudflare 主要节点对应城市）----------
-      const REGIONS = [
-        { colo: 'HKG', cityZh: '香港', cityEn: 'Hong Kong', tz: 'Asia/Hong_Kong' },
-        { colo: 'NRT', cityZh: '东京', cityEn: 'Tokyo', tz: 'Asia/Tokyo' },
-        { colo: 'KIX', cityZh: '大阪', cityEn: 'Osaka', tz: 'Asia/Tokyo' },
-        { colo: 'ICN', cityZh: '首尔', cityEn: 'Seoul', tz: 'Asia/Seoul' },
-        { colo: 'SIN', cityZh: '新加坡', cityEn: 'Singapore', tz: 'Asia/Singapore' },
-        { colo: 'TPE', cityZh: '台北', cityEn: 'Taipei', tz: 'Asia/Taipei' },
-        { colo: 'BKK', cityZh: '曼谷', cityEn: 'Bangkok', tz: 'Asia/Bangkok' },
-        { colo: 'KUL', cityZh: '吉隆坡', cityEn: 'Kuala Lumpur', tz: 'Asia/Kuala_Lumpur' },
-        { colo: 'CGK', cityZh: '雅加达', cityEn: 'Jakarta', tz: 'Asia/Jakarta' },
-        { colo: 'MNL', cityZh: '马尼拉', cityEn: 'Manila', tz: 'Asia/Manila' },
-        { colo: 'SYD', cityZh: '悉尼', cityEn: 'Sydney', tz: 'Australia/Sydney' },
-        { colo: 'MEL', cityZh: '墨尔本', cityEn: 'Melbourne', tz: 'Australia/Melbourne' },
-        { colo: 'AKL', cityZh: '奥克兰', cityEn: 'Auckland', tz: 'Pacific/Auckland' },
-        { colo: 'LHR', cityZh: '伦敦', cityEn: 'London', tz: 'Europe/London' },
-        { colo: 'CDG', cityZh: '巴黎', cityEn: 'Paris', tz: 'Europe/Paris' },
-        { colo: 'FRA', cityZh: '法兰克福', cityEn: 'Frankfurt', tz: 'Europe/Berlin' },
-        { colo: 'AMS', cityZh: '阿姆斯特丹', cityEn: 'Amsterdam', tz: 'Europe/Amsterdam' },
-        { colo: 'MAD', cityZh: '马德里', cityEn: 'Madrid', tz: 'Europe/Madrid' },
-        { colo: 'FCO', cityZh: '罗马', cityEn: 'Rome', tz: 'Europe/Rome' },
-        { colo: 'WAW', cityZh: '华沙', cityEn: 'Warsaw', tz: 'Europe/Warsaw' },
-        { colo: 'SVO', cityZh: '莫斯科', cityEn: 'Moscow', tz: 'Europe/Moscow' },
-        { colo: 'JFK', cityZh: '纽约', cityEn: 'New York', tz: 'America/New_York' },
-        { colo: 'LAX', cityZh: '洛杉矶', cityEn: 'Los Angeles', tz: 'America/Los_Angeles' },
-        { colo: 'SFO', cityZh: '旧金山', cityEn: 'San Francisco', tz: 'America/Los_Angeles' },
-        { colo: 'SEA', cityZh: '西雅图', cityEn: 'Seattle', tz: 'America/Los_Angeles' },
-        { colo: 'ORD', cityZh: '芝加哥', cityEn: 'Chicago', tz: 'America/Chicago' },
-        { colo: 'DFW', cityZh: '达拉斯', cityEn: 'Dallas', tz: 'America/Chicago' },
-        { colo: 'YYZ', cityZh: '多伦多', cityEn: 'Toronto', tz: 'America/Toronto' },
-        { colo: 'GRU', cityZh: '圣保罗', cityEn: 'São Paulo', tz: 'America/Sao_Paulo' },
-        { colo: 'EZE', cityZh: '布宜诺斯艾利斯', cityEn: 'Buenos Aires', tz: 'America/Argentina/Buenos_Aires' },
-        { colo: 'MEX', cityZh: '墨西哥城', cityEn: 'Mexico City', tz: 'America/Mexico_City' },
-        { colo: 'BOM', cityZh: '孟买', cityEn: 'Mumbai', tz: 'Asia/Kolkata' },
-        { colo: 'DEL', cityZh: '新德里', cityEn: 'New Delhi', tz: 'Asia/Kolkata' },
-        { colo: 'DXB', cityZh: '迪拜', cityEn: 'Dubai', tz: 'Asia/Dubai' },
-        { colo: 'JNB', cityZh: '约翰内斯堡', cityEn: 'Johannesburg', tz: 'Africa/Johannesburg' },
-        { colo: 'CAI', cityZh: '开罗', cityEn: 'Cairo', tz: 'Africa/Cairo' },
-        { colo: 'LOS', cityZh: '拉各斯', cityEn: 'Lagos', tz: 'Africa/Lagos' },
+      // ---------- 城市时区列表 ----------
+      const CITIES = [
+        { key: 'beijing', colo: 'PEK', cityZh: '北京', cityEn: 'Beijing',  tz: 'Asia/Shanghai' },
+        { key: 'shanghai', colo: 'SHA', cityZh: '上海', cityEn: 'Shanghai', tz: 'Asia/Shanghai' },
+        { key: 'hongkong', colo: 'HKG', cityZh: '香港', cityEn: 'Hong Kong', tz: 'Asia/Hong_Kong' },
+        { key: 'tokyo', colo: 'NRT', cityZh: '东京', cityEn: 'Tokyo', tz: 'Asia/Tokyo' },
+        { key: 'osaka', colo: 'KIX', cityZh: '大阪', cityEn: 'Osaka', tz: 'Asia/Tokyo' },
+        { key: 'seoul', colo: 'ICN', cityZh: '首尔', cityEn: 'Seoul', tz: 'Asia/Seoul' },
+        { key: 'singapore', colo: 'SIN', cityZh: '新加坡', cityEn: 'Singapore', tz: 'Asia/Singapore' },
+        { key: 'taipei', colo: 'TPE', cityZh: '台北', cityEn: 'Taipei', tz: 'Asia/Taipei' },
+        { key: 'bangkok', colo: 'BKK', cityZh: '曼谷', cityEn: 'Bangkok', tz: 'Asia/Bangkok' },
+        { key: 'kualalumpur', colo: 'KUL', cityZh: '吉隆坡', cityEn: 'Kuala Lumpur', tz: 'Asia/Kuala_Lumpur' },
+        { key: 'jakarta', colo: 'CGK', cityZh: '雅加达', cityEn: 'Jakarta', tz: 'Asia/Jakarta' },
+        { key: 'manila', colo: 'MNL', cityZh: '马尼拉', cityEn: 'Manila', tz: 'Asia/Manila' },
+        { key: 'sydney', colo: 'SYD', cityZh: '悉尼', cityEn: 'Sydney', tz: 'Australia/Sydney' },
+        { key: 'melbourne', colo: 'MEL', cityZh: '墨尔本', cityEn: 'Melbourne', tz: 'Australia/Melbourne' },
+        { key: 'auckland', colo: 'AKL', cityZh: '奥克兰', cityEn: 'Auckland', tz: 'Pacific/Auckland' },
+        { key: 'london', colo: 'LHR', cityZh: '伦敦', cityEn: 'London', tz: 'Europe/London' },
+        { key: 'paris', colo: 'CDG', cityZh: '巴黎', cityEn: 'Paris', tz: 'Europe/Paris' },
+        { key: 'frankfurt', colo: 'FRA', cityZh: '法兰克福', cityEn: 'Frankfurt', tz: 'Europe/Berlin' },
+        { key: 'amsterdam', colo: 'AMS', cityZh: '阿姆斯特丹', cityEn: 'Amsterdam', tz: 'Europe/Amsterdam' },
+        { key: 'madrid', colo: 'MAD', cityZh: '马德里', cityEn: 'Madrid', tz: 'Europe/Madrid' },
+        { key: 'rome', colo: 'FCO', cityZh: '罗马', cityEn: 'Rome', tz: 'Europe/Rome' },
+        { key: 'warsaw', colo: 'WAW', cityZh: '华沙', cityEn: 'Warsaw', tz: 'Europe/Warsaw' },
+        { key: 'moscow', colo: 'SVO', cityZh: '莫斯科', cityEn: 'Moscow', tz: 'Europe/Moscow' },
+        { key: 'newyork', colo: 'JFK', cityZh: '纽约', cityEn: 'New York', tz: 'America/New_York' },
+        { key: 'losangeles', colo: 'LAX', cityZh: '洛杉矶', cityEn: 'Los Angeles', tz: 'America/Los_Angeles' },
+        { key: 'sanfrancisco', colo: 'SFO', cityZh: '旧金山', cityEn: 'San Francisco', tz: 'America/Los_Angeles' },
+        { key: 'seattle', colo: 'SEA', cityZh: '西雅图', cityEn: 'Seattle', tz: 'America/Los_Angeles' },
+        { key: 'chicago', colo: 'ORD', cityZh: '芝加哥', cityEn: 'Chicago', tz: 'America/Chicago' },
+        { key: 'dallas', colo: 'DFW', cityZh: '达拉斯', cityEn: 'Dallas', tz: 'America/Chicago' },
+        { key: 'toronto', colo: 'YYZ', cityZh: '多伦多', cityEn: 'Toronto', tz: 'America/Toronto' },
+        { key: 'saopaulo', colo: 'GRU', cityZh: '圣保罗', cityEn: 'São Paulo', tz: 'America/Sao_Paulo' },
+        { key: 'buenosaires', colo: 'EZE', cityZh: '布宜诺斯艾利斯', cityEn: 'Buenos Aires', tz: 'America/Argentina/Buenos_Aires' },
+        { key: 'mexicocity', colo: 'MEX', cityZh: '墨西哥城', cityEn: 'Mexico City', tz: 'America/Mexico_City' },
+        { key: 'mumbai', colo: 'BOM', cityZh: '孟买', cityEn: 'Mumbai', tz: 'Asia/Kolkata' },
+        { key: 'newdelhi', colo: 'DEL', cityZh: '新德里', cityEn: 'New Delhi', tz: 'Asia/Kolkata' },
+        { key: 'dubai', colo: 'DXB', cityZh: '迪拜', cityEn: 'Dubai', tz: 'Asia/Dubai' },
+        { key: 'johannesburg', colo: 'JNB', cityZh: '约翰内斯堡', cityEn: 'Johannesburg', tz: 'Africa/Johannesburg' },
+        { key: 'cairo', colo: 'CAI', cityZh: '开罗', cityEn: 'Cairo', tz: 'Africa/Cairo' },
+        { key: 'lagos', colo: 'LOS', cityZh: '拉各斯', cityEn: 'Lagos', tz: 'Africa/Lagos' },
       ];
 
-      const BEIJING = { colo: 'PEK', cityZh: '北京', cityEn: 'Beijing', tz: 'Asia/Shanghai' };
-
-      // ---------- 文案 ----------
       const I18N = {
         zh: {
-          label: '北京时间',
           tzLabel: '时区',
           langLabel: '语言',
-          beijing: '北京时间',
+          themeLabel: '主题色',
+          langBtn: '中文',
+          back: '返回',
+          closeUnsupported: '浏览器不允许脚本直接关闭此标签页，请手动关闭（Ctrl+W / Cmd+W）。',
           statusOk: (rtt, drift) => `时间源：Cloudflare 边缘 · 延迟约 ${rtt} ms · 与本地设备偏差 ${drift} ms`,
           statusErr: (msg) => '获取服务器时间失败，暂时使用本地设备时间：' + msg,
+          fullscreen: '全屏',
+          exitFullscreen: '退出全屏',
         },
         en: {
-          label: 'Beijing Time',
           tzLabel: 'Time Zone',
           langLabel: 'Language',
-          beijing: 'Beijing Time',
+          themeLabel: 'Theme',
+          langBtn: 'English',
+          back: 'Back',
+          closeUnsupported: 'This browser does not allow scripts to close the tab. Please close it manually (Ctrl+W / Cmd+W).',
           statusOk: (rtt, drift) => `Source: Cloudflare edge · RTT ~${rtt} ms · offset vs local ${drift} ms`,
           statusErr: (msg) => 'Failed to fetch server time, using local device time: ' + msg,
+          fullscreen: 'Fullscreen',
+          exitFullscreen: 'Exit fullscreen',
         },
       };
 
@@ -201,8 +386,9 @@
       let serverTimeBase = null;
       let localTimeBase = null;
       let drift = 0;
-      let mainTz = 'Asia/Shanghai';
+      let selectedKey = 'beijing';
       let lang = 'zh';
+      let theme = 'white';
       let lastStatus = null;
 
       const mainTimeEl = document.getElementById('mainTime');
@@ -213,36 +399,31 @@
       const langSelect = document.getElementById('langSelect');
       const lblTz = document.getElementById('lblTz');
       const lblLang = document.getElementById('lblLang');
+      const lblTheme = document.getElementById('lblTheme');
+      const themeRow = document.getElementById('themeRow');
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+      const topLangBtn = document.getElementById('topLangBtn');
+      const topLangText = document.getElementById('topLangText');
+      const backBtn = document.getElementById('backBtn');
+      const backText = document.getElementById('backText');
+      const closeHint = document.getElementById('closeHint');
 
-      // ---------- 时区选项：北京 + 去重地区 ----------
-      const TZ_OPTIONS = (() => {
-        const list = [{ ...BEIJING, isBeijing: true }];
-        const seen = new Set(['Asia/Shanghai']);
-        REGIONS.forEach(r => {
-          if (!seen.has(r.tz)) {
-            seen.add(r.tz);
-            list.push(r);
-          }
-        });
-        return list;
-      })();
+      function getSelectedCity() {
+        return CITIES.find(c => c.key === selectedKey) || CITIES[0];
+      }
 
-      // ---------- 计算某时区当前的 UTC 偏移，返回 "UTC+8" / "UTC-5" / "UTC+5:30" ----------
+      // ---------- UTC 偏移 ----------
       function getUtcOffset(tz, date = new Date()) {
         const parts = new Intl.DateTimeFormat('en-US', {
           timeZone: tz,
           timeZoneName: 'shortOffset',
         }).formatToParts(date);
-
         const tzPart = parts.find(p => p.type === 'timeZoneName');
         if (!tzPart) return 'UTC';
-
         let s = tzPart.value.replace('GMT', 'UTC');
-        // "UTC+08:00" -> "UTC+8"，"UTC+00:00" -> "UTC"
         s = s.replace(/UTC([+-])0?(\d+)(?::00)?$/, (m, sign, h) => {
           return h === '0' ? 'UTC' : `UTC${sign}${h}`;
         });
-        // 处理半小时偏移 "UTC+05:30" -> "UTC+5:30"
         s = s.replace(/UTC([+-])0?(\d+):(\d{2})$/, (m, sign, h, min) => {
           return `UTC${sign}${h}:${min}`;
         });
@@ -257,55 +438,109 @@
           hour12: false,
         }).format(new Date(ms));
       }
-
       function fmtDate(ms, tz, locale) {
         return new Intl.DateTimeFormat(locale, {
           timeZone: tz,
           year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
         }).format(new Date(ms));
       }
-
       function currentServerTime() {
         if (serverTimeBase === null) return Date.now();
-        const elapsed = performance.now() - localTimeBase;
-        return serverTimeBase + elapsed;
+        return serverTimeBase + (performance.now() - localTimeBase);
       }
 
-      // ---------- 渲染主时钟 ----------
+      // ---------- 渲染 ----------
       function render() {
         const now = currentServerTime();
         const locale = lang === 'zh' ? 'zh-CN' : 'en-US';
-        mainTimeEl.textContent = fmtTime(now, mainTz, locale);
-        mainDateEl.textContent = fmtDate(now, mainTz, locale);
+        const city = getSelectedCity();
+        mainTimeEl.textContent = fmtTime(now, city.tz, locale);
+        mainDateEl.textContent = fmtDate(now, city.tz, locale);
         requestAnimationFrame(render);
       }
 
       // ---------- 时区下拉 ----------
       function rebuildTzSelect() {
         tzSelect.innerHTML = '';
-        TZ_OPTIONS.forEach(r => {
+        CITIES.forEach(c => {
           const opt = document.createElement('option');
-          opt.value = r.tz;
-          const city = lang === 'zh' ? r.cityZh : r.cityEn;
-          const offset = getUtcOffset(r.tz);
-          opt.textContent = r.isBeijing
-            ? `${I18N[lang].beijing} · ${offset}`
-            : `${city} (${r.colo}) · ${offset}`;
-          if (r.tz === mainTz) opt.selected = true;
+          opt.value = c.key;
+          const cityName = lang === 'zh' ? c.cityZh : c.cityEn;
+          const offset = getUtcOffset(c.tz);
+          opt.textContent = `${cityName} (${c.colo}) · ${offset}`;
+          if (c.key === selectedKey) opt.selected = true;
           tzSelect.appendChild(opt);
         });
       }
 
-      // ---------- 主标签文字 ----------
       function updateMainLabel() {
-        const found = TZ_OPTIONS.find(r => r.tz === mainTz);
-        if (mainTz === 'Asia/Shanghai') {
-          mainLabelEl.textContent = I18N[lang].label;
-        } else if (found) {
-          mainLabelEl.textContent = lang === 'zh' ? found.cityZh : found.cityEn;
-        } else {
-          mainLabelEl.textContent = mainTz;
+        const city = getSelectedCity();
+        mainLabelEl.textContent = lang === 'zh' ? city.cityZh : city.cityEn;
+      }
+
+      // ---------- 主题 ----------
+      function applyTheme(t) {
+        theme = t;
+        document.body.className = 'theme-' + t;
+        themeRow.querySelectorAll('.theme-swatch').forEach(el => {
+          el.classList.toggle('active', el.dataset.theme === t);
+        });
+        updateThemeTitles();
+      }
+
+      function updateThemeTitles() {
+        const titlesZh = { gray:'灰色', white:'白色', red:'红色', yellow:'黄色', green:'绿色', blue:'浅蓝' };
+        const titlesEn = { gray:'Gray', white:'White', red:'Red', yellow:'Yellow', green:'Green', blue:'Light Blue' };
+        themeRow.querySelectorAll('.theme-swatch').forEach(el => {
+          el.title = lang === 'zh' ? titlesZh[el.dataset.theme] : titlesEn[el.dataset.theme];
+        });
+      }
+
+      // ---------- 全屏 ----------
+      function updateFullscreenBtn() {
+        const isFs = !!document.fullscreenElement;
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.title = isFs ? I18N[lang].exitFullscreen : I18N[lang].fullscreen;
+        fullscreenBtn.style.opacity = isFs ? '0.6' : '1';
+      }
+
+      async function toggleFullscreen() {
+        try {
+          if (!document.fullscreenElement) {
+            await document.documentElement.requestFullscreen();
+          } else {
+            await document.exitFullscreen();
+          }
+        } catch (e) {
+          // 某些环境不允许全屏，忽略
         }
+        updateFullscreenBtn();
+      }
+
+      // ---------- 关闭标签页 ----------
+      function showCloseHint() {
+        closeHint.textContent = I18N[lang].closeUnsupported;
+        closeHint.classList.add('show');
+        clearTimeout(showCloseHint._t);
+        showCloseHint._t = setTimeout(() => {
+          closeHint.classList.remove('show');
+        }, 3000);
+      }
+
+      function tryCloseTab() {
+        // 先尝试 window.close()。浏览器只允许脚本关闭由脚本打开的标签页，
+        // 普通标签页通常会静默失败或抛异常。
+        try {
+          window.close();
+        } catch (e) {
+          // ignore
+        }
+        // 给浏览器一点时间执行关闭；如果页面还在，说明没被允许关闭。
+        setTimeout(() => {
+          if (!document.hidden && !window.closed) {
+            showCloseHint();
+          }
+        }, 200);
       }
 
       // ---------- 应用语言 ----------
@@ -315,9 +550,17 @@
 
         lblTz.textContent = I18N[lang].tzLabel;
         lblLang.textContent = I18N[lang].langLabel;
+        lblTheme.textContent = I18N[lang].themeLabel;
+        topLangText.textContent = I18N[lang].langBtn;
+        topLangBtn.title = lang === 'zh' ? 'Switch to English' : '切换到中文';
+        backText.textContent = I18N[lang].back;
+        backBtn.title = I18N[lang].back;
+        langSelect.value = lang;
 
         rebuildTzSelect();
         updateMainLabel();
+        updateThemeTitles();
+        updateFullscreenBtn();
 
         if (lastStatus && lastStatus.type === 'ok') {
           statusEl.textContent = I18N[lang].statusOk(lastStatus.rtt, lastStatus.drift);
@@ -326,7 +569,7 @@
         }
       }
 
-      // ---------- 同步时间 ----------
+      // ---------- 同步 ----------
       async function syncTime() {
         try {
           const t0 = performance.now();
@@ -334,12 +577,10 @@
           const t1 = performance.now();
           if (!res.ok) throw new Error('HTTP ' + res.status);
           const data = await res.json();
-
           const rtt = t1 - t0;
           serverTimeBase = data.serverTime + rtt / 2;
           localTimeBase = performance.now();
           drift = serverTimeBase - Date.now();
-
           lastStatus = { type: 'ok', rtt: Math.round(rtt), drift: Math.round(drift) };
           statusEl.textContent = I18N[lang].statusOk(lastStatus.rtt, lastStatus.drift);
         } catch (e) {
@@ -357,16 +598,22 @@
         e.stopPropagation();
         settingsPanel.classList.toggle('open');
       });
-
       document.addEventListener('click', (e) => {
         if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
           settingsPanel.classList.remove('open');
         }
       });
 
-      // ---------- 事件绑定 ----------
+      // ---------- 事件 ----------
+      backBtn.addEventListener('click', tryCloseTab);
+
+      topLangBtn.addEventListener('click', () => {
+        lang = lang === 'zh' ? 'en' : 'zh';
+        applyLang();
+      });
+
       tzSelect.addEventListener('change', () => {
-        mainTz = tzSelect.value;
+        selectedKey = tzSelect.value;
         updateMainLabel();
       });
 
@@ -375,12 +622,20 @@
         applyLang();
       });
 
+      themeRow.addEventListener('click', (e) => {
+        const sw = e.target.closest('.theme-swatch');
+        if (sw) applyTheme(sw.dataset.theme);
+      });
+
+      fullscreenBtn.addEventListener('click', toggleFullscreen);
+      document.addEventListener('fullscreenchange', updateFullscreenBtn);
+
       // ---------- 启动 ----------
+      applyTheme('white');
       applyLang();
       syncTime().then(() => render());
 
       setInterval(syncTime, 10 * 60 * 1000);
-
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden) syncTime();
       });
