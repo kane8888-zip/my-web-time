@@ -57,6 +57,16 @@
       overflow-x: hidden;
     }
 
+    /* ---------- IE 降级：固定浅色，隐藏现代控件 ---------- */
+    .is-ie body {
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .is-ie .topbar,
+    .is-ie #settingsPanel,
+    .is-ie #fullscreenBtn,
+    .is-ie #status { display: none !important; }
+
     /* ---------- 顶部工具栏 ---------- */
     .topbar {
       position: fixed;
@@ -448,8 +458,45 @@
   </div>
   <div id="status"></div>
 
+  <!-- IE 专用极简时钟：只有时间和日期，固定白底黑字 -->
   <script>
     (function () {
+      // 检测 IE（包括 IE11）
+      var isIE = /*@cc_on!@*/false || !!document.documentMode;
+      if (!isIE) return; // 现代浏览器直接跳过这段
+
+      document.documentElement.className += ' is-ie';
+
+      var timeEl = document.getElementById('mainTime');
+      var dateEl = document.getElementById('mainDate');
+      var labelEl = document.getElementById('mainLabel');
+
+      labelEl.textContent = '北京';
+
+      function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+      function tick() {
+        // 用本地时间，手动算北京时间（UTC+8）
+        var now = new Date();
+        var utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+        var bj = new Date(utcMs + 8 * 3600000);
+
+        timeEl.textContent = pad(bj.getHours()) + ':' + pad(bj.getMinutes()) + ':' + pad(bj.getSeconds());
+        dateEl.textContent = bj.getFullYear() + '-' + (bj.getMonth() + 1) + '-' + bj.getDate();
+
+        setTimeout(tick, 500);
+      }
+      tick();
+    })();
+  </script>
+
+  <!-- 现代浏览器脚本（IE 会跳过大部分，因为下面有 try/catch 兜底） -->
+  <script>
+    (function () {
+      // 如果是 IE，不执行现代逻辑
+      var isIE = /*@cc_on!@*/false || !!document.documentMode;
+      if (isIE) return;
+
       // ---------- 城市时区列表 ----------
       const CITIES = [
         { key: 'beijing', colo: 'PEK', cityZh: '北京', cityEn: 'Beijing',  tz: 'Asia/Shanghai' },
@@ -529,7 +576,6 @@
         },
       };
 
-      // ---------- 状态 ----------
       let serverTimeBase = null;
       let localTimeBase = null;
       let drift = 0;
@@ -562,7 +608,6 @@
         return CITIES.find(c => c.key === selectedKey) || CITIES[0];
       }
 
-      // ---------- UTC 偏移 ----------
       function getUtcOffset(tz, date = new Date()) {
         const parts = new Intl.DateTimeFormat('en-US', {
           timeZone: tz,
@@ -580,7 +625,6 @@
         return s;
       }
 
-      // ---------- 时间格式化 ----------
       function fmtTime(ms, tz, locale) {
         return new Intl.DateTimeFormat(locale, {
           timeZone: tz,
@@ -589,7 +633,6 @@
         }).format(new Date(ms));
       }
 
-      // ---------- 日期格式化：中文 年-月-日，英文 月-日-年，均不补零 ----------
       function fmtDate(ms, tz, locale) {
         const parts = new Intl.DateTimeFormat(locale, {
           timeZone: tz,
@@ -602,10 +645,8 @@
         const month = get('month');
         const day = get('day');
         if (locale === 'zh-CN') {
-          // 2026-11-3
           return `${year}-${month}-${day}`;
         }
-        // 11-3-2026
         return `${month}-${day}-${year}`;
       }
 
@@ -614,7 +655,6 @@
         return serverTimeBase + (performance.now() - localTimeBase);
       }
 
-      // ---------- 渲染 ----------
       function render() {
         const now = currentServerTime();
         const locale = lang === 'zh' ? 'zh-CN' : 'en-US';
@@ -624,7 +664,6 @@
         requestAnimationFrame(render);
       }
 
-      // ---------- 时区下拉 ----------
       function rebuildTzSelect() {
         tzSelect.innerHTML = '';
         CITIES.forEach(c => {
@@ -643,7 +682,6 @@
         mainLabelEl.textContent = lang === 'zh' ? city.cityZh : city.cityEn;
       }
 
-      // ---------- 主题 ----------
       function applyTheme(t) {
         theme = t;
         document.body.className = 'theme-' + t;
@@ -664,7 +702,6 @@
         });
       }
 
-      // ---------- 全屏 ----------
       function updateFullscreenBtn() {
         const isFs = !!document.fullscreenElement;
         fullscreenBtn.textContent = '⛶';
@@ -679,13 +716,10 @@
           } else {
             await document.exitFullscreen();
           }
-        } catch (e) {
-          // 某些环境不允许全屏，忽略
-        }
+        } catch (e) {}
         updateFullscreenBtn();
       }
 
-      // ---------- 关闭标签页 ----------
       function showCloseHint() {
         closeHint.textContent = I18N[lang].closeUnsupported;
         closeHint.classList.add('show');
@@ -696,11 +730,7 @@
       }
 
       function tryCloseTab() {
-        try {
-          window.close();
-        } catch (e) {
-          // ignore
-        }
+        try { window.close(); } catch (e) {}
         setTimeout(() => {
           if (!document.hidden && !window.closed) {
             showCloseHint();
@@ -708,7 +738,6 @@
         }, 200);
       }
 
-      // ---------- 应用语言 ----------
       function applyLang() {
         document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
         document.title = lang === 'zh' ? '全球时钟' : 'World Clock';
@@ -734,8 +763,12 @@
         }
       }
 
-      // ---------- 同步 ----------
       async function syncTime() {
+        // IE 没有 fetch，直接跳过，用本地时间
+        if (typeof fetch === 'undefined') {
+          statusEl.textContent = '当前浏览器不支持服务器对时，使用本地时间。';
+          return;
+        }
         try {
           const t0 = performance.now();
           const res = await fetch('/api/time', { cache: 'no-store' });
@@ -755,7 +788,6 @@
         }
       }
 
-      // ---------- 设置面板开关 ----------
       settingsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         settingsPanel.classList.toggle('open');
@@ -766,7 +798,6 @@
         }
       });
 
-      // ---------- 事件 ----------
       backBtn.addEventListener('click', tryCloseTab);
 
       topLangBtn.addEventListener('click', () => {
@@ -792,7 +823,6 @@
       fullscreenBtn.addEventListener('click', toggleFullscreen);
       document.addEventListener('fullscreenchange', updateFullscreenBtn);
 
-      // ---------- 启动 ----------
       applyTheme('white');
       applyLang();
       syncTime().then(() => render());
