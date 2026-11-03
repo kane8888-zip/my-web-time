@@ -2,10 +2,16 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#f8fafc" />
   <title>Clock</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
     /* ---------- 主题变量 ---------- */
     :root {
@@ -36,6 +42,7 @@
 
     body {
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -45,15 +52,30 @@
       font-family: "SF Mono", "Consolas", monospace;
       position: relative;
       transition: background 0.3s, color 0.3s;
-      padding-top: 80px;
+      padding: 80px 0 64px;
+      touch-action: manipulation;
+      overflow-x: hidden;
     }
 
-    /* ---------- 左上角返回按钮 ---------- */
-    #backBtn {
+    /* ---------- 顶部工具栏（返回 / 语言 / 设置）---------- */
+    .topbar {
       position: fixed;
-      top: 16px;
-      left: 16px;
+      top: 0;
+      left: 0;
+      right: 0;
       z-index: 100;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 0 16px;
+      pointer-events: none;
+    }
+    .topbar > * { pointer-events: auto; }
+    .topbar > :first-child { justify-self: start; }
+    .topbar > :nth-child(2) { justify-self: center; }
+    .topbar > :last-child { justify-self: end; }
+
+    #backBtn {
       height: 44px;
       padding: 0 18px;
       border-radius: 999px;
@@ -68,17 +90,11 @@
       gap: 8px;
       transition: background 0.2s, color 0.2s;
     }
-    #backBtn:hover { background: var(--btn-hover); color: var(--text); }
     #backBtn .icon { font-size: 16px; line-height: 1; }
 
-    /* ---------- 顶部语言切换按钮 ---------- */
     #topLangBtn {
-      position: fixed;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 100;
-      padding: 8px 18px;
+      height: 40px;
+      padding: 0 16px;
       border-radius: 999px;
       border: 1px solid var(--border);
       background: var(--btn-bg);
@@ -91,15 +107,9 @@
       gap: 6px;
       transition: background 0.2s, color 0.2s;
     }
-    #topLangBtn:hover { background: var(--btn-hover); color: var(--text); }
     #topLangBtn .arrow { font-size: 11px; opacity: 0.7; }
 
-    /* ---------- 右上角设置按钮 ---------- */
     #settingsBtn {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      z-index: 100;
       width: 44px;
       height: 44px;
       border-radius: 50%;
@@ -113,13 +123,22 @@
       justify-content: center;
       transition: background 0.2s, color 0.2s;
     }
-    #settingsBtn:hover { background: var(--btn-hover); color: var(--text); }
+
+    /* 仅在支持 hover 的设备上显示 hover 效果，避免触屏“粘滞” */
+    @media (hover: hover) {
+      #backBtn:hover,
+      #topLangBtn:hover,
+      #settingsBtn:hover {
+        background: var(--btn-hover);
+        color: var(--text);
+      }
+    }
 
     /* ---------- 右下角全屏按钮 ---------- */
     #fullscreenBtn {
       position: fixed;
-      bottom: 16px;
-      right: 16px;
+      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      right: calc(16px + env(safe-area-inset-right, 0px));
       z-index: 100;
       width: 44px;
       height: 44px;
@@ -134,12 +153,14 @@
       justify-content: center;
       transition: background 0.2s, color 0.2s, opacity 0.2s;
     }
-    #fullscreenBtn:hover { background: var(--btn-hover); color: var(--text); }
+    @media (hover: hover) {
+      #fullscreenBtn:hover { background: var(--btn-hover); color: var(--text); }
+    }
 
     /* ---------- 关闭提示 ---------- */
     #closeHint {
       position: fixed;
-      top: 70px;
+      top: calc(70px + env(safe-area-inset-top, 0px));
       left: 50%;
       transform: translateX(-50%) translateY(-10px);
       z-index: 200;
@@ -153,7 +174,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.25s, transform 0.25s;
-      max-width: 90vw;
+      max-width: calc(100vw - 32px);
       text-align: center;
     }
     #closeHint.show {
@@ -164,11 +185,11 @@
     /* ---------- 设置面板 ---------- */
     #settingsPanel {
       position: fixed;
-      top: 70px;
+      top: calc(68px + env(safe-area-inset-top, 0px));
       right: 16px;
       z-index: 99;
       width: 320px;
-      max-height: calc(100vh - 90px);
+      max-height: calc(100dvh - 90px - env(safe-area-inset-top, 0px));
       overflow-y: auto;
       background: var(--panel-bg);
       border: 1px solid var(--border);
@@ -177,6 +198,7 @@
       display: none;
       box-shadow: 0 20px 40px rgba(0,0,0,0.5);
       transition: background 0.3s, border-color 0.3s;
+      -webkit-overflow-scrolling: touch;
     }
     #settingsPanel.open { display: block; }
     #settingsPanel h3 {
@@ -193,7 +215,7 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       color: var(--text);
-      font-size: 14px;
+      font-size: 16px;
       font-family: inherit;
       outline: none;
     }
@@ -214,7 +236,9 @@
       transition: transform 0.15s, border-color 0.15s;
       position: relative;
     }
-    .theme-swatch:hover { transform: scale(1.1); }
+    @media (hover: hover) {
+      .theme-swatch:hover { transform: scale(1.1); }
+    }
     .theme-swatch.active { border-color: var(--text); }
     .theme-swatch.active::after {
       content: "✓";
@@ -248,9 +272,15 @@
       color: var(--text-muted);
       margin-top: 12px;
     }
+    #mainTime, #mainDate, #mainLabel {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ---------- 底部状态 ---------- */
     #status {
       position: fixed;
-      bottom: 16px;
+      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
       left: 50%;
       transform: translateX(-50%);
       font-size: 0.75rem;
@@ -258,22 +288,124 @@
       min-height: 1em;
       text-align: center;
       padding: 0 16px;
+      max-width: calc(100vw - 120px);
+    }
+
+    /* =========================================================
+       手机端适配（≤ 640px）
+       ========================================================= */
+    @media (max-width: 640px) {
+      body {
+        padding: calc(72px + env(safe-area-inset-top, 0px)) 0 calc(72px + env(safe-area-inset-bottom, 0px));
+      }
+
+      .topbar {
+        padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 0 12px;
+      }
+
+      #backBtn {
+        padding: 0 14px;
+        gap: 6px;
+        font-size: 13px;
+      }
+      #topLangBtn {
+        height: 38px;
+        padding: 0 14px;
+        font-size: 12px;
+      }
+      #settingsBtn {
+        width: 42px;
+        height: 42px;
+        font-size: 20px;
+      }
+
+      #mainClock {
+        padding: 0 16px;
+      }
+      #mainLabel {
+        font-size: 12px;
+        margin-bottom: 10px;
+      }
+      #mainTime {
+        font-size: clamp(2.8rem, 15vw, 4.5rem);
+      }
+      #mainDate {
+        font-size: 0.95rem;
+        margin-top: 10px;
+        padding: 0 8px;
+      }
+
+      #settingsPanel {
+        left: 12px;
+        right: 12px;
+        width: auto;
+        top: calc(64px + env(safe-area-inset-top, 0px));
+        max-height: calc(100dvh - 96px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        padding: 18px;
+      }
+      #settingsPanel h3 { font-size: 12px; }
+      #settingsPanel select {
+        padding: 12px;
+        font-size: 16px;
+      }
+
+      .theme-swatch {
+        width: 40px;
+        height: 40px;
+      }
+
+      #fullscreenBtn {
+        bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        right: calc(12px + env(safe-area-inset-right, 0px));
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
+      }
+
+      #status {
+        bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+        left: 12px;
+        right: 64px;
+        transform: none;
+        text-align: left;
+        padding: 0;
+        font-size: 11px;
+        max-width: none;
+        line-height: 1.4;
+      }
+
+      #closeHint {
+        top: calc(64px + env(safe-area-inset-top, 0px));
+        font-size: 12px;
+        padding: 9px 14px;
+      }
+    }
+
+    /* 超窄屏（≤ 380px）：返回按钮只留图标 */
+    @media (max-width: 380px) {
+      #backText { display: none; }
+      #backBtn {
+        width: 42px;
+        padding: 0;
+        justify-content: center;
+      }
     }
   </style>
 </head>
 <body class="theme-white">
 
-  <button id="backBtn" title="Close">
-    <span class="icon">←</span>
-    <span id="backText">返回</span>
-  </button>
+  <div class="topbar">
+    <button id="backBtn" title="Close">
+      <span class="icon">←</span>
+      <span id="backText">返回</span>
+    </button>
+    <button id="topLangBtn" title="Language">
+      <span id="topLangText">中文</span>
+      <span class="arrow">▾</span>
+    </button>
+    <button id="settingsBtn" title="Settings">⚙</button>
+  </div>
 
-  <button id="topLangBtn" title="Language">
-    <span id="topLangText">中文</span>
-    <span class="arrow">▾</span>
-  </button>
-
-  <button id="settingsBtn" title="Settings">⚙</button>
   <div id="settingsPanel">
     <div class="group">
       <h3 id="lblTz">时区</h3>
@@ -355,6 +487,15 @@
         { key: 'lagos', colo: 'LOS', cityZh: '拉各斯', cityEn: 'Lagos', tz: 'Africa/Lagos' },
       ];
 
+      const THEME_COLORS = {
+        gray: '#1c1c1e',
+        white: '#f8fafc',
+        red: '#fff1f2',
+        yellow: '#fefce8',
+        green: '#f0fdf4',
+        blue: '#f0f9ff',
+      };
+
       const I18N = {
         zh: {
           tzLabel: '时区',
@@ -407,6 +548,9 @@
       const backBtn = document.getElementById('backBtn');
       const backText = document.getElementById('backText');
       const closeHint = document.getElementById('closeHint');
+      const settingsBtn = document.getElementById('settingsBtn');
+      const settingsPanel = document.getElementById('settingsPanel');
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
 
       function getSelectedCity() {
         return CITIES.find(c => c.key === selectedKey) || CITIES[0];
@@ -482,6 +626,9 @@
       function applyTheme(t) {
         theme = t;
         document.body.className = 'theme-' + t;
+        if (metaTheme) {
+          metaTheme.setAttribute('content', THEME_COLORS[t] || '#f8fafc');
+        }
         themeRow.querySelectorAll('.theme-swatch').forEach(el => {
           el.classList.toggle('active', el.dataset.theme === t);
         });
@@ -528,14 +675,11 @@
       }
 
       function tryCloseTab() {
-        // 先尝试 window.close()。浏览器只允许脚本关闭由脚本打开的标签页，
-        // 普通标签页通常会静默失败或抛异常。
         try {
           window.close();
         } catch (e) {
           // ignore
         }
-        // 给浏览器一点时间执行关闭；如果页面还在，说明没被允许关闭。
         setTimeout(() => {
           if (!document.hidden && !window.closed) {
             showCloseHint();
@@ -591,9 +735,6 @@
       }
 
       // ---------- 设置面板开关 ----------
-      const settingsBtn = document.getElementById('settingsBtn');
-      const settingsPanel = document.getElementById('settingsPanel');
-
       settingsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         settingsPanel.classList.toggle('open');
