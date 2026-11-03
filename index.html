@@ -49,7 +49,7 @@
       justify-content: center;
       background: var(--bg);
       color: var(--text);
-      font-family: "SF Mono", "Consolas", monospace;
+      font-family: "SF Mono", "Consolas", "Roboto Mono", "Courier New", monospace;
       position: relative;
       transition: background 0.3s, color 0.3s;
       padding: 80px 0 64px;
@@ -57,7 +57,7 @@
       overflow-x: hidden;
     }
 
-    /* ---------- 顶部工具栏（返回 / 语言 / 设置）---------- */
+    /* ---------- 顶部工具栏 ---------- */
     .topbar {
       position: fixed;
       top: 0;
@@ -124,7 +124,6 @@
       transition: background 0.2s, color 0.2s;
     }
 
-    /* 仅在支持 hover 的设备上显示 hover 效果，避免触屏“粘滞” */
     @media (hover: hover) {
       #backBtn:hover,
       #topLangBtn:hover,
@@ -263,19 +262,26 @@
     }
     #mainTime {
       font-size: clamp(3rem, 12vw, 7rem);
-      letter-spacing: 0.05em;
+      letter-spacing: 0.02em;
       font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
       line-height: 1.1;
     }
     #mainDate {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       color: var(--text-muted);
       margin-top: 12px;
+      letter-spacing: 0.02em;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
     }
     #mainTime, #mainDate, #mainLabel {
       user-select: none;
       -webkit-user-select: none;
     }
+
+    html[lang="en"] #mainLabel { letter-spacing: 0.04em; }
+    html[lang="en"] #mainTime { font-size: clamp(2.8rem, 11vw, 6.2rem); }
 
     /* ---------- 底部状态 ---------- */
     #status {
@@ -574,7 +580,7 @@
         return s;
       }
 
-      // ---------- 格式化 ----------
+      // ---------- 时间格式化 ----------
       function fmtTime(ms, tz, locale) {
         return new Intl.DateTimeFormat(locale, {
           timeZone: tz,
@@ -582,12 +588,27 @@
           hour12: false,
         }).format(new Date(ms));
       }
+
+      // ---------- 日期格式化：中文 年-月-日，英文 月-日-年，均不补零 ----------
       function fmtDate(ms, tz, locale) {
-        return new Intl.DateTimeFormat(locale, {
+        const parts = new Intl.DateTimeFormat(locale, {
           timeZone: tz,
-          year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
-        }).format(new Date(ms));
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+        }).formatToParts(new Date(ms));
+        const get = (type) => (parts.find(p => p.type === type) || {}).value || '';
+        const year = get('year');
+        const month = get('month');
+        const day = get('day');
+        if (locale === 'zh-CN') {
+          // 2026-11-3
+          return `${year}-${month}-${day}`;
+        }
+        // 11-3-2026
+        return `${month}-${day}-${year}`;
       }
+
       function currentServerTime() {
         if (serverTimeBase === null) return Date.now();
         return serverTimeBase + (performance.now() - localTimeBase);
